@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新标签页</title>
+    <link rel="stylesheet" href="new_tab.css">
+</head>
+
+<body>
+    <div class="background-blur"></div>
+
+    <!-- 搜索栏 -->
+    <div class="search-container">
+        <div class="search-bar">
+            <div class="search-engine-selector">
+                <img src="https://www.baidu.com/favicon.ico" alt="百度" id="current-engine-icon">
+                <div class="search-engine-dropdown">
+                    <div class="search-engine" data-engine="baidu" data-url="https://www.baidu.com/s?wd=">
+                        <img src="https://www.baidu.com/favicon.ico" alt="百度">
+                        <span>百度</span>
+                    </div>
+                    <div class="search-engine" data-engine="google" data-url="https://www.google.com/search?q=">
+                        <img src="https://www.google.com/favicon.ico" alt="Google">
+                        <span>Google</span>
+                    </div>
+                    <div class="search-engine" data-engine="bing" data-url="https://www.bing.com/search?q=">
+                        <img src="https://www.bing.com/favicon.ico" alt="必应">
+                        <span>必应</span>
+                    </div>
+                    <div class="search-engine" data-engine="sogou" data-url="https://www.sogou.com/web?query=">
+                        <img src="https://www.sogou.com/favicon.ico" alt="搜狗">
+                        <span>搜狗</span>
+                    </div>
+                </div>
+            </div>
+            <input type="text" id="search-input" autofocus placeholder="按 / 键进行搜索" autocomplete="off" autocorrect="off"
+                autocapitalize="off" spellcheck="false">
+        </div>
+    </div>
+
+    <!-- 网站图标网格 -->
+    <div class="sites-grid" id="sites-grid">
+        <!-- 网站项会通过JS动态生成 -->
+    </div>
+
+    <!-- 添加网站按钮 -->
+    <div class="add-site-button" id="add-site-button">
+        <span>+</span>
+    </div>
+
+    <!-- 设置按钮 -->
+    <div class="settings-button" id="settings-button">
+        <span>⚙</span>
+    </div>
+
+    <!-- 添加/编辑网站弹窗 -->
+    <div class="modal" id="site-modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3 id="modal-title">添加网站</h3>
+            <form id="site-form" autocomplete="off">
+                <input type="hidden" id="site-id">
+                <div class="form-group">
+                    <label for="site-name">网站名称</label>
+                    <input type="text" id="site-name" required autocomplete="off" autocorrect="off" autocapitalize="off"
+                        spellcheck="false">
+                </div>
+                <div class="form-group">
+                    <label for="site-url">网站地址</label>
+                    <input type="url" id="site-url" required autocomplete="off" autocorrect="off" autocapitalize="off"
+                        spellcheck="false">
+                </div>
+                <div class="form-group">
+                    <label for="site-icon">图标地址 (选填)</label>
+                    <input type="url" id="site-icon" placeholder="留空将自动获取网站图标" autocomplete="off" autocorrect="off"
+                        autocapitalize="off" spellcheck="false">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-save">保存</button>
+                    <button type="button" class="btn-cancel">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 背景设置弹窗 -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>背景设置</h3>
+            <form id="settings-form" autocomplete="off">
+                <div class="form-group">
+                    <label for="background-url">背景图片地址</label>
+                    <input type="url" id="background-url" placeholder="输入图片URL或留空使用默认背景" autocomplete="off"
+                        autocorrect="off" autocapitalize="off" spellcheck="false">
+                </div>
+                <div class="form-group">
+                    <label for="blur-amount">模糊程度</label>
+                    <div class="range-container">
+                        <input type="range" id="blur-amount" min="0" max="10" value="5">
+                        <span id="blur-value">5px</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="default-search-engine">默认搜索引擎</label>
+                    <select id="default-search-engine">
+                        <option value="baidu">百度</option>
+                        <option value="google">Google</option>
+                        <option value="bing">必应</option>
+                        <option value="sogou">搜狗</option>
+                    </select>
+                </div>
+                <div class="settings-buttons">
+                    <button type="button" id="reset-sites" class="btn-secondary">恢复默认网站</button>
+                    <button type="button" id="export-sites" class="btn-secondary">导出网站数据</button>
+                    <button type="button" id="import-sites" class="btn-secondary">导入网站数据</button>
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-save">保存设置</button>
+                    <button type="button" class="btn-cancel">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="new_tab.js"></script>
+</body>
+
+</html>

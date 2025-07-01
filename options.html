@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自定义新标签页 - 设置</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+<body>
+    <div class="container">
+        <h1>自定义新标签页设置</h1>
+        
+        <div class="option-section">
+            <h2>背景设置</h2>
+            <div class="form-group">
+                <label for="background-url">背景图片 URL</label>
+                <input type="url" id="background-url" placeholder="输入图片URL或留空使用默认模糊绿色背景" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            </div>
+            <div class="form-group">
+                <label for="blur-amount">模糊程度</label>
+                <input type="range" id="blur-amount" min="0" max="10" value="5">
+                <span id="blur-value">5px</span>
+            </div>
+        </div>
+        
+        <div class="option-section">
+            <h2>网站管理</h2>
+            <p>你可以在新标签页直接右键点击任何网站图标来编辑或删除，或点击"+"按钮添加新网站。</p>
+            <div class="form-group">
+                <button id="reset-sites">恢复默认网站</button>
+                <button id="export-sites">导出网站数据</button>
+                <button id="import-sites">导入网站数据</button>
+                <input type="file" id="import-file" accept=".json" style="display: none;">
+            </div>
+        </div>
+        
+        <div class="option-section">
+            <h2>搜索引擎设置</h2>
+            <p>你可以在新标签页点击搜索框左侧图标切换搜索引擎。</p>
+            <div class="form-group">
+                <label>默认搜索引擎</label>
+                <select id="default-search-engine">
+                    <option value="baidu">百度</option>
+                    <option value="google">Google</option>
+                    <option value="bing">必应</option>
+                    <option value="sogou">搜狗</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="buttons">
+            <button id="save-options" class="primary-button">保存设置</button>
+            <button id="reset-options">恢复默认设置</button>
+        </div>
+    </div>
+    
+    <script src="options.js"></script>
+</body>
+</html> 
