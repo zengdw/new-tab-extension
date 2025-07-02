@@ -6,6 +6,9 @@ let currentSearchEngine = {
     icon: 'https://www.baidu.com/favicon.ico'
 };
 
+// API配置
+const API_HOST = 'https://super-feather-c6cf.zengdewan-moxia.workers.dev';
+
 // 拖拽相关全局变量
 let draggedItem = null;
 
@@ -18,6 +21,30 @@ const defaultSites = [
     { id: 5, name: 'GitHub', url: 'https://github.com', icon: 'https://github.com/favicon.ico' },
     { id: 6, name: '淘宝', url: 'https://www.taobao.com', icon: 'https://www.taobao.com/favicon.ico' }
 ];
+
+// 搜索引擎数据
+const searchEngineData = {
+    baidu: {
+        name: 'baidu',
+        url: 'https://www.baidu.com/s?wd=',
+        icon: 'https://www.baidu.com/favicon.ico'
+    },
+    google: {
+        name: 'google',
+        url: 'https://www.google.com/search?q=',
+        icon: 'https://www.google.com/favicon.ico'
+    },
+    bing: {
+        name: 'bing',
+        url: 'https://www.bing.com/search?q=',
+        icon: 'https://www.bing.com/favicon.ico'
+    },
+    sogou: {
+        name: 'sogou',
+        url: 'https://www.sogou.com/web?query=',
+        icon: 'https://www.sogou.com/favicon.ico'
+    }
+};
 
 // DOM 元素
 const sitesGrid = document.getElementById('sites-grid');
@@ -43,10 +70,6 @@ const backgroundUrlInput = document.getElementById('background-url');
 const blurAmountInput = document.getElementById('blur-amount');
 const blurValueSpan = document.getElementById('blur-value');
 const defaultSearchEngineSelect = document.getElementById('default-search-engine');
-const resetSitesButton = document.getElementById('reset-sites');
-const exportSitesButton = document.getElementById('export-sites');
-const importSitesButton = document.getElementById('import-sites');
-const importFileInput = document.getElementById('import-file');
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
@@ -58,13 +81,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 初始化搜索引擎
 function initSearchEngine() {
-    // 从Chrome存储加载上次使用的搜索引擎
-    chrome.storage.sync.get(['currentSearchEngine'], (result) => {
-        if (result.currentSearchEngine) {
-            currentSearchEngine = result.currentSearchEngine;
-            currentEngineIcon.src = currentSearchEngine.icon;
-        }
-    });
+    // 从API加载上次使用的搜索引擎
+    fetch(`${API_HOST}/kv/currentSearchEngine`)
+        .then(response => {
+            if (response.ok) return response.json();
+            throw new Error('搜索引擎数据加载失败');
+        })
+        .then(data => {
+            if (data) {
+                currentSearchEngine = data;
+                currentEngineIcon.src = currentSearchEngine.icon;
+            }
+        })
+        .catch(error => {
+            console.error('加载搜索引擎设置失败:', error);
+        });
 
     // 搜索引擎选择器点击事件
     const searchEngineSelector = document.querySelector('.search-engine-selector');
@@ -100,7 +131,13 @@ function initSearchEngine() {
             };
 
             currentEngineIcon.src = engineIcon;
-            chrome.storage.sync.set({ currentSearchEngine: currentSearchEngine });
+            // 保存搜索引擎设置到API
+            fetch(`${API_HOST}/kv/currentSearchEngine`, {
+                method: 'PUT',
+                body: JSON.stringify(currentSearchEngine)
+            }).catch(error => {
+                console.error('保存搜索引擎设置失败:', error);
+            });
 
             // 选择后关闭下拉菜单
             searchEngineDropdown.classList.remove('show');
@@ -116,12 +153,23 @@ function initSearchEngine() {
     });
 }
 
-// 从Chrome存储加载网站数据
+// 从API加载网站数据
 function loadSites() {
-    chrome.storage.sync.get(['sites'], (result) => {
-        sites = result.sites || defaultSites;
-        renderSites();
-    });
+    fetch(`${API_HOST}/kv/sites`)
+        .then(response => {
+            if (response.ok) return response.json();
+            throw new Error('站点数据加载失败');
+        })
+        .then(data => {
+            sites = data || defaultSites;
+            renderSites();
+        })
+        .catch(error => {
+            console.error('加载站点失败:', error);
+            // 加载失败时使用默认站点
+            sites = defaultSites;
+            renderSites();
+        });
 }
 
 // 渲染网站图标
@@ -261,16 +309,6 @@ function initEventListeners() {
         saveSettings();
     });
     
-    // 恢复默认网站
-    resetSitesButton.addEventListener('click', () => {
-        if (confirm('确定要恢复默认网站吗？这将删除您添加的所有自定义网站。')) {
-            chrome.storage.sync.set({ sites: defaultSites }, () => {
-                alert('已恢复默认网站！');
-                loadSites();
-            });
-        }
-    });
-    
     // 导出网站数据
     exportSitesButton.addEventListener('click', exportSites);
     
@@ -330,14 +368,29 @@ function openEditModal(site) {
 // 打开设置模态框
 function openSettingsModal() {
     // 加载当前设置
-    chrome.storage.sync.get(['options'], (result) => {
-        const options = result.options || { backgroundUrl: '', blurAmount: 5, defaultSearchEngine: 'baidu' };
-        
-        backgroundUrlInput.value = options.backgroundUrl || '';
-        blurAmountInput.value = options.blurAmount || 5;
-        blurValueSpan.textContent = `${blurAmountInput.value}px`;
-        defaultSearchEngineSelect.value = options.defaultSearchEngine || 'baidu';
-    });
+    fetch(`${API_HOST}/kv/options`)
+        .then(response => {
+            if (response.ok) return response.json();
+            throw new Error('设置数据加载失败');
+        })
+        .then(options => {
+            options = options || { backgroundUrl: '', blurAmount: 5, defaultSearchEngine: 'baidu' };
+            
+            backgroundUrlInput.value = options.backgroundUrl || '';
+            if (options.blurAmount || options.blurAmount === 0) {
+                blurAmountInput.value = options.blurAmount
+            } 
+            blurValueSpan.textContent = `${blurAmountInput.value}px`;
+            defaultSearchEngineSelect.value = options.defaultSearchEngine || 'baidu';
+        })
+        .catch(error => {
+            console.error('加载设置失败:', error);
+            // 使用默认设置
+            backgroundUrlInput.value = '';
+            blurAmountInput.value = 5;
+            blurValueSpan.textContent = '5px';
+            defaultSearchEngineSelect.value = 'baidu';
+        });
     
     settingsModal.style.display = 'flex';
 }
@@ -387,10 +440,18 @@ function deleteSite(id) {
     }
 }
 
-// 保存网站到Chrome存储同步
+// 保存网站到API
 function saveSites() {
-    chrome.storage.sync.set({ sites: sites }, () => {
-        console.log('网站数据已同步到Google账号');
+    fetch(`${API_HOST}/kv/sites`, {
+        method: 'PUT',
+        body: JSON.stringify(sites)
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('保存站点数据失败');
+        console.log('网站数据已保存到服务器');
+    })
+    .catch(error => {
+        console.error('保存站点失败:', error);
     });
 }
 
@@ -404,19 +465,27 @@ function formatUrl(url) {
 
 // 加载背景设置
 function loadBackgroundSettings() {
-    // 从Chrome存储中加载背景设置
-    chrome.storage.sync.get(['options'], (result) => {
-        const options = result.options || { backgroundUrl: '', blurAmount: 5 };
-        const backgroundBlur = document.querySelector('.background-blur');
+    // 从API加载背景设置
+    fetch(`${API_HOST}/kv/options`)
+        .then(response => {
+            if (response.ok) return response.json();
+            throw new Error('设置数据加载失败');
+        })
+        .then(options => {
+            options = options || { backgroundUrl: '', blurAmount: 5 };
+            const backgroundBlur = document.querySelector('.background-blur');
 
-        // 设置背景图片
-        if (options.backgroundUrl) {
-            backgroundBlur.style.backgroundImage = `url('${options.backgroundUrl}')`;
-        }
+            // 设置背景图片
+            if (options.backgroundUrl) {
+                backgroundBlur.style.backgroundImage = `url('${options.backgroundUrl}')`;
+            }
 
-        // 设置模糊程度
-        backgroundBlur.style.filter = `blur(${options.blurAmount}px)`;
-    });
+            // 设置模糊程度
+            backgroundBlur.style.filter = `blur(${options.blurAmount}px)`;
+        })
+        .catch(error => {
+            console.error('加载背景设置失败:', error);
+        });
 }
 
 // 拖拽开始时
@@ -494,85 +563,33 @@ function saveSettings() {
         defaultSearchEngine: defaultSearchEngineSelect.value
     };
     
-    // 保存到Chrome同步存储
-    chrome.storage.sync.set({ options }, () => {
+    // 保存到API
+    fetch(`${API_HOST}/kv/options`, {
+        method: 'PUT',
+        body: JSON.stringify(options)
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('保存设置失败');
+        
         // 更新搜索引擎
-        const searchEngineData = {
-            baidu: {
-                name: 'baidu',
-                url: 'https://www.baidu.com/s?wd=',
-                icon: 'https://www.baidu.com/favicon.ico'
-            },
-            google: {
-                name: 'google',
-                url: 'https://www.google.com/search?q=',
-                icon: 'https://www.google.com/favicon.ico'
-            },
-            bing: {
-                name: 'bing',
-                url: 'https://www.bing.com/search?q=',
-                icon: 'https://www.bing.com/favicon.ico'
-            },
-            sogou: {
-                name: 'sogou',
-                url: 'https://www.sogou.com/web?query=',
-                icon: 'https://www.sogou.com/favicon.ico'
-            }
-        };
-        
-        chrome.storage.sync.set({ currentSearchEngine: searchEngineData[options.defaultSearchEngine] }, () => {
-            // 应用设置
-            loadBackgroundSettings();
-            currentSearchEngine = searchEngineData[options.defaultSearchEngine];
-            currentEngineIcon.src = currentSearchEngine.icon;
-            
-            alert('设置已保存！');
-            closeAllModals();
+        return fetch(`${API_HOST}/kv/currentSearchEngine`, {
+            method: 'PUT',
+            body: JSON.stringify(searchEngineData[options.defaultSearchEngine])
         });
-    });
-}
-
-// 导出网站数据
-function exportSites() {
-    chrome.storage.sync.get(['sites'], (result) => {
-        const sitesData = JSON.stringify(result.sites || defaultSites);
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('保存搜索引擎设置失败');
         
-        // 创建下载链接
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(sitesData);
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "new_tab_sites.json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
+        // 应用设置
+        loadBackgroundSettings();
+        currentSearchEngine = searchEngineData[options.defaultSearchEngine];
+        currentEngineIcon.src = currentSearchEngine.icon;
+        
+        alert('设置已保存！');
+        closeAllModals();
+    })
+    .catch(error => {
+        console.error('保存设置失败:', error);
+        alert('保存设置失败，请重试！');
     });
 }
-
-// 导入网站数据
-function importSites(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const sitesData = JSON.parse(e.target.result);
-            
-            // 验证数据格式
-            if (Array.isArray(sitesData) && sitesData.length > 0 && sitesData[0].hasOwnProperty('id') && sitesData[0].hasOwnProperty('name') && sitesData[0].hasOwnProperty('url')) {
-                chrome.storage.sync.set({ sites: sitesData }, () => {
-                    alert('网站数据导入成功！');
-                    loadSites();
-                });
-            } else {
-                alert('导入失败：无效的数据格式。');
-            }
-        } catch (error) {
-            alert('导入失败：' + error.message);
-        }
-    };
-    reader.readAsText(file);
-    
-    // 清空文件输入，以便可以再次选择同一文件
-    event.target.value = '';
-} 
