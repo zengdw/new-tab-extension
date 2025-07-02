@@ -7,7 +7,8 @@ let currentSearchEngine = {
 };
 
 // API配置
-const API_HOST = 'https://super-feather-c6cf.zengdewan-moxia.workers.dev';
+const API_HOST = 'https://goole-new-tab-extension.zengdewan-moxia.workers.dev';
+let API_TOKEN = localStorage.getItem('API_TOKEN') || '';
 
 // 拖拽相关全局变量
 let draggedItem = null;
@@ -70,6 +71,7 @@ const backgroundUrlInput = document.getElementById('background-url');
 const blurAmountInput = document.getElementById('blur-amount');
 const blurValueSpan = document.getElementById('blur-value');
 const defaultSearchEngineSelect = document.getElementById('default-search-engine');
+const apiTokenInput = document.getElementById('api-token');
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
@@ -82,7 +84,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // 初始化搜索引擎
 function initSearchEngine() {
     // 从API加载上次使用的搜索引擎
-    fetch(`${API_HOST}/kv/currentSearchEngine`)
+    fetch(`${API_HOST}/kv/currentSearchEngine`, {
+        headers: {
+            'Authorization': `Bearer ${API_TOKEN}`
+        }
+    })
         .then(response => {
             if (response.ok) return response.json();
             throw new Error('搜索引擎数据加载失败');
@@ -134,7 +140,10 @@ function initSearchEngine() {
             // 保存搜索引擎设置到API
             fetch(`${API_HOST}/kv/currentSearchEngine`, {
                 method: 'PUT',
-                body: JSON.stringify(currentSearchEngine)
+                body: JSON.stringify(currentSearchEngine),
+                headers: {
+                    'Authorization': `Bearer ${API_TOKEN}`
+                }
             }).catch(error => {
                 console.error('保存搜索引擎设置失败:', error);
             });
@@ -155,7 +164,11 @@ function initSearchEngine() {
 
 // 从API加载网站数据
 function loadSites() {
-    fetch(`${API_HOST}/kv/sites`)
+    fetch(`${API_HOST}/kv/sites`, {
+        headers: {
+            'Authorization': `Bearer ${API_TOKEN}`
+        }
+    })
         .then(response => {
             if (response.ok) return response.json();
             throw new Error('站点数据加载失败');
@@ -253,37 +266,37 @@ function initEventListeners() {
     addSiteButton.addEventListener('click', () => {
         openAddModal();
     });
-    
+
     // 打开设置模态框
     settingsButton.addEventListener('click', () => {
         openSettingsModal();
     });
-    
+
     // 关闭模态框
     document.querySelectorAll('.close-modal').forEach(button => {
         button.addEventListener('click', () => {
             closeAllModals();
         });
     });
-    
+
     document.querySelectorAll('.btn-cancel').forEach(button => {
         button.addEventListener('click', () => {
             closeAllModals();
         });
     });
-    
+
     // 点击模态框外部关闭
     window.addEventListener('click', (e) => {
         if (e.target.classList.contains('modal')) {
             closeAllModals();
         }
     });
-    
+
     // 模糊度滑块变化实时显示
     blurAmountInput.addEventListener('input', () => {
         blurValueSpan.textContent = `${blurAmountInput.value}px`;
     });
-    
+
     // 网站表单提交
     siteForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -291,7 +304,7 @@ function initEventListeners() {
         const siteName = siteNameInput.value;
         const siteUrl = formatUrl(siteUrlInput.value);
         const siteIcon = siteIconInput.value;
-        
+
         if (siteId) {
             // 编辑现有网站
             updateSite(parseInt(siteId), siteName, siteUrl, siteIcon);
@@ -299,37 +312,27 @@ function initEventListeners() {
             // 添加新网站
             addSite(siteName, siteUrl, siteIcon);
         }
-        
+
         closeAllModals();
     });
-    
+
     // 设置表单提交
     settingsForm.addEventListener('submit', (e) => {
         e.preventDefault();
         saveSettings();
     });
-    
-    // 导出网站数据
-    exportSitesButton.addEventListener('click', exportSites);
-    
-    // 导入网站数据
-    importSitesButton.addEventListener('click', () => {
-        importFileInput.click();
-    });
-    
-    importFileInput.addEventListener('change', importSites);
-    
+
     // 全局键盘事件处理 - 按 / 键激活搜索框
     document.addEventListener('keydown', (e) => {
         // 如果按下 / 键，且没有模态框打开，且不是在输入框中输入
-        if (e.key === '/' && 
-            siteModal.style.display !== 'flex' && 
-            settingsModal.style.display !== 'flex' && 
+        if (e.key === '/' &&
+            siteModal.style.display !== 'flex' &&
+            settingsModal.style.display !== 'flex' &&
             !e.target.matches('input, textarea, select')) {
-            
+
             // 阻止默认行为（避免"/"字符被输入到搜索框）
             e.preventDefault();
-            
+
             // 激活搜索框并清空内容
             searchInput.focus();
             searchInput.value = '';
@@ -368,18 +371,22 @@ function openEditModal(site) {
 // 打开设置模态框
 function openSettingsModal() {
     // 加载当前设置
-    fetch(`${API_HOST}/kv/options`)
+    fetch(`${API_HOST}/kv/options`, {
+        headers: {
+            'Authorization': `Bearer ${API_TOKEN}`
+        }
+    })
         .then(response => {
             if (response.ok) return response.json();
             throw new Error('设置数据加载失败');
         })
         .then(options => {
             options = options || { backgroundUrl: '', blurAmount: 5, defaultSearchEngine: 'baidu' };
-            
+
             backgroundUrlInput.value = options.backgroundUrl || '';
             if (options.blurAmount || options.blurAmount === 0) {
                 blurAmountInput.value = options.blurAmount
-            } 
+            }
             blurValueSpan.textContent = `${blurAmountInput.value}px`;
             defaultSearchEngineSelect.value = options.defaultSearchEngine || 'baidu';
         })
@@ -391,7 +398,7 @@ function openSettingsModal() {
             blurValueSpan.textContent = '5px';
             defaultSearchEngineSelect.value = 'baidu';
         });
-    
+
     settingsModal.style.display = 'flex';
 }
 
@@ -444,15 +451,18 @@ function deleteSite(id) {
 function saveSites() {
     fetch(`${API_HOST}/kv/sites`, {
         method: 'PUT',
-        body: JSON.stringify(sites)
+        body: JSON.stringify(sites),
+        headers: {
+            'Authorization': `Bearer ${API_TOKEN}`
+        }
     })
-    .then(response => {
-        if (!response.ok) throw new Error('保存站点数据失败');
-        console.log('网站数据已保存到服务器');
-    })
-    .catch(error => {
-        console.error('保存站点失败:', error);
-    });
+        .then(response => {
+            if (!response.ok) throw new Error('保存站点数据失败');
+            console.log('网站数据已保存到服务器');
+        })
+        .catch(error => {
+            console.error('保存站点失败:', error);
+        });
 }
 
 // 格式化URL（确保有http前缀）
@@ -466,7 +476,11 @@ function formatUrl(url) {
 // 加载背景设置
 function loadBackgroundSettings() {
     // 从API加载背景设置
-    fetch(`${API_HOST}/kv/options`)
+    fetch(`${API_HOST}/kv/options`, {
+        headers: {
+            'Authorization': `Bearer ${API_TOKEN}`
+        }
+    })
         .then(response => {
             if (response.ok) return response.json();
             throw new Error('设置数据加载失败');
@@ -557,39 +571,48 @@ function handleDrop(e) {
 
 // 保存设置
 function saveSettings() {
+    API_TOKEN = apiTokenInput.value;
+    localStorage.setItem('API_TOKEN', API_TOKEN); // 保存到localStorage
+
     const options = {
         backgroundUrl: backgroundUrlInput.value.trim(),
         blurAmount: parseInt(blurAmountInput.value),
         defaultSearchEngine: defaultSearchEngineSelect.value
     };
-    
+
     // 保存到API
     fetch(`${API_HOST}/kv/options`, {
         method: 'PUT',
-        body: JSON.stringify(options)
+        body: JSON.stringify(options),
+        headers: {
+            'Authorization': `Bearer ${API_TOKEN}`
+        }
     })
-    .then(response => {
-        if (!response.ok) throw new Error('保存设置失败');
-        
-        // 更新搜索引擎
-        return fetch(`${API_HOST}/kv/currentSearchEngine`, {
-            method: 'PUT',
-            body: JSON.stringify(searchEngineData[options.defaultSearchEngine])
+        .then(response => {
+            if (!response.ok) throw new Error('保存设置失败');
+
+            // 更新搜索引擎
+            return fetch(`${API_HOST}/kv/currentSearchEngine`, {
+                method: 'PUT',
+                body: JSON.stringify(searchEngineData[options.defaultSearchEngine]),
+                headers: {
+                    'Authorization': `Bearer ${API_TOKEN}`
+                }
+            });
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('保存搜索引擎设置失败');
+
+            // 应用设置
+            loadBackgroundSettings();
+            currentSearchEngine = searchEngineData[options.defaultSearchEngine];
+            currentEngineIcon.src = currentSearchEngine.icon;
+
+            alert('设置已保存！');
+            closeAllModals();
+        })
+        .catch(error => {
+            console.error('保存设置失败:', error);
+            alert('保存设置失败，请重试！');
         });
-    })
-    .then(response => {
-        if (!response.ok) throw new Error('保存搜索引擎设置失败');
-        
-        // 应用设置
-        loadBackgroundSettings();
-        currentSearchEngine = searchEngineData[options.defaultSearchEngine];
-        currentEngineIcon.src = currentSearchEngine.icon;
-        
-        alert('设置已保存！');
-        closeAllModals();
-    })
-    .catch(error => {
-        console.error('保存设置失败:', error);
-        alert('保存设置失败，请重试！');
-    });
 }
