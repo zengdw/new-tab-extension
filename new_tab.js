@@ -54,13 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSites();
     initEventListeners();
     loadBackgroundSettings();
-
-    // 使用小延迟确保页面完全加载
-    setTimeout(() => {
-        searchInput.focus();
-        console.log(document.activeElement);
-    }, 0);
-
 });
 
 // 初始化搜索引擎
