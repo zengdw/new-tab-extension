@@ -7,7 +7,7 @@ let currentSearchEngine = {
 };
 
 // API配置
-const API_HOST = 'https://goole-new-tab-extension.zengdewan-moxia.workers.dev';
+const API_HOST = 'https://google-new-tab-extension.zengdewan-moxia.workers.dev';
 let API_TOKEN = localStorage.getItem('API_TOKEN') || '';
 
 // 拖拽相关全局变量
